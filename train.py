@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader, TensorDataset, random_split
 from model import BachNet
 from ChoraleDataset import ChoraleDataset
 import os
+import wandb
 
 if torch.cuda.is_available():
     device = torch.device("cuda")
@@ -21,8 +22,8 @@ epochs = 1000
 
 checkpoint_iters = 50
 val_iters = 5
-increased_checkpoint_epoch = 600
-increased_checkpoint_iters = 10
+increased_checkpoint_epoch = 0
+increased_checkpoint_iters = 5
 
 val_ratio = .1
 batch_size = 1024
@@ -31,10 +32,14 @@ learning_rate = 0.004
 dropout_rate = .1
 weight_decay = 2e-5
 
-from_checkpoint = True
-checkpoint_path = '../content/drive/MyDrive/BachNet/checkpoints/'
-best_checkpoint_path = '../content/drive/MyDrive/BachNet/checkpoints/best/'
+from_checkpoint = False
+checkpoint_path = 'checkpoint600.pth'
+checkpoint_path = '/drive/MyDrive/BachNet/checkpoints/'
+best_checkpoint_path = '/drive/MyDrive/BachNet/checkpoints/best/'
 checkpoint_epoch = 600
+
+os.makedirs(checkpoint_path, exist_ok=True)
+os.makedirs(best_checkpoint_path, exist_ok=True)
 
 # Initialize Logging
 wandb.init(
@@ -128,7 +133,7 @@ for epoch in range(start_epoch, epochs):
     # Save checkpoint at intervals
     if (epoch+1) % (checkpoint_iters) == 0:
         os.makedirs('checkpoints', exist_ok=True)
-        path = f'checkpoints/checkpoint{epoch+1}.pth'
+        path = checkpoint_path
         torch.save({
             'epoch': epoch + 1,
             'model_state_dict': model.state_dict(),
@@ -141,12 +146,12 @@ for epoch in range(start_epoch, epochs):
             top5.sort(key=lambda x: x[0])
             top5last = top5[-1][0]
         if len(top5) < 5 or total_val_loss < top5last:
-            best_path = f'checkpoints/best/best_model_epoch_{epoch+1}_loss_{total_val_loss:.4f}.pth'
+            best_path = best_checkpoint_path+f'/best_model_epoch_{epoch+1}_loss_{total_val_loss:.4f}.pth'
             torch.save({
                 'epoch': epoch + 1, 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(), 'val_loss': total_val_loss
             }, best_path)
-
+            print(f"Saved new best model to {best_path}")
             if len(top5) == 5:
                 loss_to_remove, path_to_remove = top5.pop(-1)
                 if os.path.exists(path_to_remove):
