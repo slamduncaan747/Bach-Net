@@ -34,8 +34,8 @@ weight_decay = 2e-5
 
 from_checkpoint = False
 checkpoint_path = 'checkpoint600.pth'
-checkpoint_path = '/drive/MyDrive/BachNet/checkpoints/'
-best_checkpoint_path = '/drive/MyDrive/BachNet/checkpoints/best/'
+checkpoint_path = '/content/drive/MyDrive/BachNet/checkpoints/'
+best_checkpoint_path = '/content/drive/MyDrive/BachNet/checkpoints/best/'
 checkpoint_epoch = 600
 
 os.makedirs(checkpoint_path, exist_ok=True)
@@ -133,7 +133,7 @@ for epoch in range(start_epoch, epochs):
     # Save checkpoint at intervals
     if (epoch+1) % (checkpoint_iters) == 0:
         os.makedirs('checkpoints', exist_ok=True)
-        path = checkpoint_path
+        path = checkpoint_path + f'/checkpoint{epoch+1}.pth'
         torch.save({
             'epoch': epoch + 1,
             'model_state_dict': model.state_dict(),
@@ -146,7 +146,7 @@ for epoch in range(start_epoch, epochs):
             top5.sort(key=lambda x: x[0])
             top5last = top5[-1][0]
         if len(top5) < 5 or total_val_loss < top5last:
-            best_path = best_checkpoint_path+f'/best_model_epoch_{epoch+1}_loss_{total_val_loss:.4f}.pth'
+            best_path = best_checkpoint_path+f'best_model_epoch_{epoch+1}_loss_{total_val_loss:.4f}.pth'
             torch.save({
                 'epoch': epoch + 1, 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(), 'val_loss': total_val_loss
