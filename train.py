@@ -22,8 +22,8 @@ epochs = 1000
 
 checkpoint_iters = 50
 val_iters = 5
-increased_checkpoint_epoch = 0
-increased_checkpoint_iters = 5
+increased_checkpoint_epoch = 600
+increased_checkpoint_iters = 10
 
 val_ratio = .1
 batch_size = 1024
