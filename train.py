@@ -58,10 +58,8 @@ wandb.init(
 config = wandb.config
 
 # Create data loaders
-t_set = ChoraleDataset('Bach-Net/dataset.pkl')
-t_size = int(len(t_set)*(1-val_ratio))
-v_size = int(len(t_set)-t_size)
-train_set, val_set = random_split(t_set, [t_size, v_size])
+train_set = ChoraleDataset('Bach-Net/train_dataset.pkl')
+val_set = ChoraleDataset('Bach-Net/val_dataset.pkl')
 train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
 
@@ -69,7 +67,7 @@ val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
 model = BachNet()
 start_epoch = 0
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.epochs, eta_min=1e-6)
+scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=100, T_mult=2)
 
 if from_checkpoint:
     full_path = os.path.join(checkpoint_path, checkpoint_name)
@@ -83,7 +81,11 @@ if from_checkpoint:
         start_epoch = checkpoint_epoch
 
 model.to(device)
-loss_function = torch.nn.BCEWithLogitsLoss()
+
+pos_weight_value = 25.0
+pos_weight = torch.tensor([pos_weight_value]).to(device)
+
+loss_function = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 wandb.watch(model, log='all', log_freq=100)
 
 top5 = []

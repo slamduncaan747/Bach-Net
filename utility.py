@@ -15,11 +15,11 @@ voice_ranges = {
 def visualize_as_matrix(dataset_element, voice_ranges):
     fig, axes = plt.subplots(4, 1, figsize=(15, 10))
 
-    soprano = dataset_element['input'].reshape(21, 64)
+    soprano = dataset_element['input']
     output = dataset_element['output']
-    alto = output[0:1344].reshape(21, 64)
-    tenor = output[1344:2688].reshape(21, 64)
-    bass = output[2688:4480].reshape(28, 64)
+    alto = output[0]
+    tenor = output[1]
+    bass = output[2]
 
     voices = [
         ('Soprano', soprano, voice_ranges['soprano']),
@@ -41,15 +41,16 @@ def visualize_as_matrix(dataset_element, voice_ranges):
     
     plt.tight_layout()
     plt.show()
-def play_dataset_element(dataset_element, voice_ranges, tempo=60):
+
+def play_dataset_element(dataset_element, voice_ranges, bpm=60):
     score = stream.Score()
-    score.insert(0, tempo_module.MetronomeMark(number=tempo))
+    score.insert(0, tempo.MetronomeMark(number=bpm))
     
     parts_data = [
-        ('Soprano', dataset_element['input'].reshape(21, 64), voice_ranges['soprano']),
-        ('Alto', dataset_element['output'][0:1344].reshape(21, 64), voice_ranges['alto']),
-        ('Tenor', dataset_element['output'][1344:2688].reshape(21, 64), voice_ranges['tenor']),
-        ('Bass', dataset_element['output'][2688:4480].reshape(28, 64), voice_ranges['bass'])
+        ('Soprano', dataset_element['input'], voice_ranges['soprano']),
+        ('Alto', dataset_element['output'][0], voice_ranges['alto']),
+        ('Tenor', dataset_element['output'][1], voice_ranges['tenor']),
+        ('Bass', dataset_element['output'][2], voice_ranges['bass'])
     ]
     
     for part_name, piano_roll, voice_range in parts_data:
@@ -94,6 +95,3 @@ def play_dataset_element(dataset_element, voice_ranges, tempo=60):
     
     score.show('midi')
     return score
-
-
-
