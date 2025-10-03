@@ -4,35 +4,31 @@ class BachNet(torch.nn.Module):
     def __init__(self, dropout_rate=.2):
         super(BachNet, self).__init__()
         self.dropout_rate = dropout_rate
-        self.double_conv_1 = DoubleConvBlock(1, 64, dropout_rate=self.dropout_rate)
-        self.encoder_1 = EncoderBlock(64, 128, dropout_rate=self.dropout_rate)
-        self.encoder_2 = EncoderBlock(128, 256, dropout_rate=self.dropout_rate)
-        self.encoder_3 = EncoderBlock(256, 512, dropout_rate=self.dropout_rate)
+        self.double_conv_1 = DoubleConvBlock(1, 32, dropout_rate=self.dropout_rate)
+        self.encoder_1 = EncoderBlock(32, 64, dropout_rate=self.dropout_rate)
+        self.encoder_2 = EncoderBlock(64, 128, dropout_rate=self.dropout_rate)
 
-        self.bottleneck = DoubleConvBlock(512, 1024)
+        self.bottleneck = DoubleConvBlock(128, 128)
 
-        self.decoder_1 = DecoderBlock(1024, 512, dropout_rate=self.dropout_rate)
-        self.decoder_2 = DecoderBlock(512, 256, dropout_rate=self.dropout_rate)
-        self.decoder_3 = DecoderBlock(256, 128, dropout_rate=self.dropout_rate)
-        self.decoder_4 = DecoderBlock(128, 64, dropout_rate=self.dropout_rate)
-
-        self.output_1 = torch.nn.Conv2d(64, 1, kernel_size=1)
-        self.output_2 = torch.nn.Conv2d(64, 1, kernel_size=1)
-        self.output_3 = torch.nn.Conv2d(64, 1, kernel_size=1)
+        self.decoder_1 = DecoderBlock(128, 64, dropout_rate=self.dropout_rate)
+        self.decoder_2 = DecoderBlock(64, 32, dropout_rate=self.dropout_rate)
+        self.decoder_3 = DecoderBlock(32, 1, dropout_rate=self.dropout_rate)
+        
+        self.output_1 = torch.nn.Conv2d(32, 1, kernel_size=1)
+        self.output_2 = torch.nn.Conv2d(32, 1, kernel_size=1)
+        self.output_3 = torch.nn.Conv2d(32, 1, kernel_size=1)
 
 
     def forward(self, x):
         skip1 = self.double_conv_1(x)
         downsampled_1, skip2 = self.encoder_1(skip1)
         downsampled_2, skip3 = self.encoder_2(downsampled_1)
-        downsampled_3, skip4 = self.encoder_3(downsampled_2)
 
-        bottleneck = self.bottleneck(downsampled_3)
+        bottleneck = self.bottleneck(downsampled_2)
 
-        upsampled_1 = self.decoder_1(bottleneck, skip4)
-        upsampled_2 = self.decoder_2(upsampled_1, skip3)
-        upsampled_3 = self.decoder_3(upsampled_2, skip2)
-        decoder_output = self.decoder_4(upsampled_3, skip1)
+        upsampled_1 = self.decoder_1(bottleneck, skip3)
+        upsampled_2 = self.decoder_2(upsampled_1, skip2)
+        decoder_output = self.decoder_3(upsampled_2, skip1)
 
         resized_for_1_2 = torch.nn.functional.interpolate(decoder_output, size=(21, 64), mode='bilinear', align_corners=False)
         output_1 = self.output_1(resized_for_1_2)
