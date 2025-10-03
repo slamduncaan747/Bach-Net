@@ -6,6 +6,7 @@ from model import BachNet
 from ChoraleDataset import ChoraleDataset
 import os
 import wandb
+from sklearn.model_selection import ParameterGrid
 
 if torch.cuda.is_available():
     device = torch.device("cuda")
@@ -14,8 +15,6 @@ elif torch.backends.mps.is_available():
 else:
     device = torch.device("cpu")
 torch.manual_seed(8)
-
-
 
 # Hyperparameters
 epochs = 1000
@@ -33,7 +32,7 @@ dropout_rate = .1
 weight_decay = 2e-5
 
 from_checkpoint = False
-checkpoint_path = 'checkpoint600.pth'
+checkpoint_name = 'checkpoint600.pth'
 checkpoint_path = '/content/drive/MyDrive/BachNet/checkpoints/'
 best_checkpoint_path = '/content/drive/MyDrive/BachNet/checkpoints/best/'
 checkpoint_epoch = 600
