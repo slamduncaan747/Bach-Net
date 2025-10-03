@@ -47,20 +47,23 @@ class BachNet(torch.nn.Module):
 class DoubleConvBlock(torch.nn.Module):
     def __init__(self, in_channels, out_channels, dropout_rate=0.2):
         super(DoubleConvBlock, self).__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.dropout = torch.nn.Dropout2d(p=dropout_rate)
         self.conv1 = torch.nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        self.bn1 = torch.nn.BatchNorm2d(out_channels)
         self.conv2 = torch.nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+        self.bn2 = torch.nn.BatchNorm2d(out_channels)
         self.relu = torch.nn.ReLU()
+        self.dropout = torch.nn.Dropout2d(p=dropout_rate)
 
     def forward(self, x):
         x = self.conv1(x)
+        x = self.bn1(x)
         x = self.relu(x)
         x = self.dropout(x)
         x = self.conv2(x)
+        x = self.bn2(x)
         x = self.relu(x)
         return x
+
 
 
 class EncoderBlock(torch.nn.Module):

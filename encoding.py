@@ -5,9 +5,9 @@ from utility import visualize_as_matrix, play_dataset_element, voice_ranges, par
 import pickle
 
 # Get all bach chorales and ensure they have exactly 4 parts and are in 4/4 time
-songs = corpus.getComposer('bach')
+initial_songs = corpus.getComposer('bach')
 valid_songs = []
-for song in songs:
+for song in initial_songs:
     chorale = converter.parse(song)
     ts = chorale.parts[0].getElementsByClass('Measure')[0].getTimeSignatures()
     if ts and ts[0].ratioString != '4/4':
@@ -94,47 +94,63 @@ def get_buffers(chorale, start_measure):
     transpositions = [n for n in range(-minBuffer, maxBuffer) if n != 0]
     return transpositions
 
-# For all valid songs, extract all valid 4 measure segments, proces into piano roll
-# separate into inputs and outputs, and save to dataset file.
-dataset = []
-for filename in valid_songs:
-    chorale = converter.parse(filename)
-    measure_count = len(chorale.parts[0].getElementsByClass('Measure'))
-    
-    for start in range(1, measure_count - 3):
-        x = None
-        y = None
+# Function to create a dataset from a list of songs with option for augmentation
+def create_dataset(songs, augment=True):
+    dataset = []
+    for filename in songs:
+        chorale = converter.parse(filename)
+        measure_count = len(chorale.parts[0].getElementsByClass('Measure'))
+        
+        for start in range(1, measure_count - 3):
+            x = None
+            y = None
 
-        invalid = False
+            invalid = False
 
-        transpositions = get_buffers(chorale, start)
-        #print(transpositions)
-        for semitones in transpositions:
-            # Loop through each part, process it, and add it to the dataset
-            output = []
-            for i in range(4):
-                processed_part = process_part(chorale.parts[i].transpose(semitones), start, voice_ranges[part_names[i]])
-                
-                if processed_part is not None:
-                    if i == 0:
-                        x = processed_part
+            transpositions = get_buffers(chorale, start)
+
+            if(not augment or transpositions == []):
+                transpositions = [0]
+            for semitones in transpositions:
+                # Loop through each part, process it, and add it to the dataset
+                output = []
+                for i in range(4):
+                    processed_part = process_part(chorale.parts[i].transpose(semitones), start, voice_ranges[part_names[i]])
+                    
+                    if processed_part is not None:
+                        if i == 0:
+                            x = processed_part
+                        else:
+                            output.append(processed_part)
                     else:
-                        output.append(processed_part)
-                else:
-                    invalid = True
-                    break
+                        invalid = True
+                        break
 
-            if invalid:
-                continue   
+                if invalid:
+                    continue   
 
-            dataset.append({
-                'chorale': filename,
-                'transpose': semitones,
-                'measures': (start, start+3),
-                'input': x,
-                'output': output
-            })
+                dataset.append({
+                    'chorale': filename,
+                    'transpose': semitones,
+                    'measures': (start, start+3),
+                    'input': x,
+                    'output': output
+                })
+    return dataset
 
-print("Size: ", len(dataset))
-with open('dataset.pkl', 'wb') as f:
-    pickle.dump(dataset, f)
+validation_ratio = 0.1
+split_idx = int(len(valid_songs) * (1 - validation_ratio))
+
+train_songs = valid_songs[:split_idx]
+val_songs = valid_songs[split_idx:]
+
+train_dataset = create_dataset(train_songs, augment=True)
+val_dataset = create_dataset(val_songs, augment=False)
+
+
+
+print("Size: ", len(train_dataset), "\n", len(val_dataset))
+with open('train_dataset.pkl', 'wb') as f:
+    pickle.dump(train_dataset, f)
+with open('val_dataset.pkl', 'wb') as f:
+    pickle.dump(val_dataset, f)
