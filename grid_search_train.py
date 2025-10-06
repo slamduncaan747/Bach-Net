@@ -17,9 +17,9 @@ else:
 torch.manual_seed(8)
 
 grid = {
-    "learning_rate": [0.004, 0.001, 0.0005],
-    "dropout_rate": [0.1, 0.15],
-    "weight_decay": [1e-5, 2e-5],
+    "learning_rate": [.001],
+    "dropout_rate": [0.25, .3, .4],
+    "weight_decay": [1e-4, 2e-5, 3e-3],
 }
 
 config_list = list(ParameterGrid(grid))
